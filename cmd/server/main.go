@@ -1,23 +1,47 @@
 package main
 
-import(
-	"net/http"
-	"github.com/joho/godotenv"
+import (
+	"learn-redis/sanity"
 	"log"
-"os"
+	"net/http"
+	"os"
+
+	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
 )
-type Config struct{
 
+type Config struct {
+	client *redis.Client
 }
 
-
-func main(){
+func main() {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-redisURL=os.Getenv("redis_url")
+	redisURL := os.Getenv("redis_url")
+	opt, err := redis.ParseURL(redisURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	clt := redis.NewClient(opt)
+
+	var cfg Config
+
+	cfg.client = clt
+
+	sanityconfig := sanity.SanityConstructor(cfg.client)
+
+	ptr := http.NewServeMux()
+
+	srv := &http.Server{
+		Addr:    ":8080",
+		Handler: ptr,
+	}
+
+	ptr.HandleFunc("GET /health", sanityconfig.Sanity)
+	srv.ListenAndServe()
 
 }
