@@ -40,7 +40,7 @@ func (cfg *limitHandler) CheckLimit(w http.ResponseWriter, r *http.Request) {
 		log.Fatal("something went wrong", err)
 	}
 
-	if res == 1 {
+	if res == int64(1) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(200)
 		w.Write([]byte("OK"))
