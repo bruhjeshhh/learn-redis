@@ -4,6 +4,8 @@ import (
 	_ "embed"
 	"log"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 
@@ -34,13 +36,28 @@ func (cfg *limitHandler) CheckLimit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
+	seconds := time.Now().Unix()
+	window := seconds - 60
+	maxInclusive := strconv.Itoa(int(window))
 
-	res, err := rateLimitScript.Run(ctx, cfg.client, []string{userID}, reqID.String()).Result()
-	if err != nil {
-		log.Fatal("something went wrong", err)
+	// res, err := rateLimitScript.Run(ctx, cfg.client, []string{userID}, reqID.String()).Result()
+	// if err != nil {
+	// 	log.Fatal("something went wrong", err)
+	// }
+
+	var res int
+	cfg.client.ZRemRangeByScore(ctx, userID, "-inf", maxInclusive)
+	if cfg.client.ZCard(ctx, userID).Val() >= 10 {
+		res = 0
+	} else {
+		res = 1
+		cfg.client.ZAdd(ctx, userID, redis.Z{
+			Score:  float64(seconds),
+			Member: reqID.String(),
+		})
 	}
 
-	if res == int64(1) {
+	if res == 1 {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(200)
 		w.Write([]byte("OK"))
