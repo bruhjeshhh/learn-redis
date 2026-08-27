@@ -1,6 +1,7 @@
 package main
 
 import (
+	"learn-redis/internal/limiter"
 	"learn-redis/sanity"
 	"log"
 	"net/http"
@@ -42,6 +43,8 @@ func main() {
 	}
 
 	ptr.HandleFunc("GET /health", sanityconfig.Sanity)
+	ptr.HandleFunc("GET /checklimit/{userID}", limiter.CheckLimit)
+
 	srv.ListenAndServe()
 
 }
