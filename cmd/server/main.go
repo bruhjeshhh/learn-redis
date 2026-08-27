@@ -34,6 +34,7 @@ func main() {
 	cfg.client = clt
 
 	sanityconfig := sanity.SanityConstructor(cfg.client)
+	limitconfig := limiter.LimitConstructor(cfg.client)
 
 	ptr := http.NewServeMux()
 
@@ -43,7 +44,7 @@ func main() {
 	}
 
 	ptr.HandleFunc("GET /health", sanityconfig.Sanity)
-	ptr.HandleFunc("GET /checklimit/{userID}", limiter.CheckLimit)
+	ptr.HandleFunc("GET /checklimit/{userID}", limitconfig.CheckLimit)
 
 	srv.ListenAndServe()
 

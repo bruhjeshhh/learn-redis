@@ -36,5 +36,18 @@ func (cfg *limitHandler) CheckLimit(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	res, err := rateLimitScript.Run(ctx, cfg.client, []string{userID}, reqID.String()).Result()
+	if err != nil {
+		log.Fatal("something went wrong", err)
+	}
+
+	if res == 1 {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(200)
+		w.Write([]byte("OK"))
+		return
+	}
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(429)
+	w.Write([]byte("hol up mate"))
 
 }

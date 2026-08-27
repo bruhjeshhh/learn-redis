@@ -1,4 +1,6 @@
-local now=os.time()
+local now = redis.call("TIME")[1]
+now = tonumber(now)
+
 local window=now-60
 
 redis.call("ZREMRANGEBYSCORE", KEYS[1], "-inf", window)
