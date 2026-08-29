@@ -1,0 +1,1 @@
+this is me trying to learn how to use redis(im embarrassingly late and i know it). i tried building a rate-limiter using sliding window and token bucket approaches. i picked up some lua scripting in the process. the code is probably garbage to your standards but feel free to dunk on me. pce <3
