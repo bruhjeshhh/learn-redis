@@ -1,14 +1,37 @@
-local now = redis.call("TIME")[1]
-now = tonumber(now)
+local now = tonumber(redis.call("TIME")[1])
+local user = KEYS[1]
 
-local window=now-60
+local capacity = 6
+local refill_rate = 1
 
-redis.call("ZREMRANGEBYSCORE", KEYS[1], "-inf", window)
-if redis.call("ZCARD",KEYS[1])>=10 then 
-    return 0
+local current_tokens = tonumber(redis.call("HGET", user, "tokens"))
+local last_refill = tonumber(redis.call("HGET", user, "last_refill"))
+
+-- First request: initialize the bucket
+if current_tokens == nil then
+    current_tokens = capacity
+    last_refill = now
 end
 
-redis.call("ZADD", KEYS[1],now,ARGV[1])
-return 1
+-- Calculate how many tokens have accumulated
+local elapsed = now - last_refill
+current_tokens = math.min(
+    current_tokens + elapsed * refill_rate,
+    capacity
+)
 
+-- Try to consume a token
+if current_tokens >= 1 then
+    current_tokens = current_tokens - 1
 
+    redis.call("HSET",user,"tokens", current_tokens,"last_refill", now)
+
+    return 1
+end
+
+-- No token available
+redis.call(
+    "HSET",user,"tokens", current_tokens,"last_refill", now
+)
+
+return 0

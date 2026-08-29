@@ -4,12 +4,10 @@ import (
 	_ "embed"
 	"log"
 	"net/http"
-	"strconv"
-	"time"
+	_ "strconv"
+	_ "time"
 
 	"github.com/redis/go-redis/v9"
-
-	"github.com/google/uuid"
 )
 
 type limitHandler struct {
@@ -30,34 +28,34 @@ func LimitConstructor(redis *redis.Client) *limitHandler {
 func (cfg *limitHandler) CheckLimit(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.PathValue("userID")
-	reqID, err := uuid.NewV7()
-	if err != nil {
-		log.Fatal("cant generate request iD: ", err)
-	}
-
-	ctx := r.Context()
-	seconds := time.Now().Unix()
-	window := seconds - 60
-	maxInclusive := strconv.Itoa(int(window))
-
-	// res, err := rateLimitScript.Run(ctx, cfg.client, []string{userID}, reqID.String()).Result()
+	// reqID, err := uuid.NewV7()
 	// if err != nil {
-	// 	log.Fatal("something went wrong", err)
+	// 	log.Fatal("cant generate request iD: ", err)
 	// }
 
-	var res int
-	cfg.client.ZRemRangeByScore(ctx, userID, "-inf", maxInclusive)
-	if cfg.client.ZCard(ctx, userID).Val() >= 10 {
-		res = 0
-	} else {
-		res = 1
-		cfg.client.ZAdd(ctx, userID, redis.Z{
-			Score:  float64(seconds),
-			Member: reqID.String(),
-		})
+	ctx := r.Context()
+	// seconds := time.Now().Unix()
+	// window := seconds - 60
+	// maxInclusive := strconv.Itoa(int(window))
+
+	res, err := rateLimitScript.Run(ctx, cfg.client, []string{userID}).Result()
+	if err != nil {
+		log.Fatal("something went wrong", err)
 	}
 
-	if res == 1 {
+	// var res int
+	// cfg.client.ZRemRangeByScore(ctx, userID, "-inf", maxInclusive)
+	// if cfg.client.ZCard(ctx, userID).Val() >= 10 {
+	// 	res = 0
+	// } else {
+	// 	res = 1
+	// 	cfg.client.ZAdd(ctx, userID, redis.Z{
+	// 		Score:  float64(seconds),
+	// 		Member: reqID.String(),
+	// 	})
+	// }
+
+	if res == int64(1) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(200)
 		w.Write([]byte("OK"))
